@@ -1,8 +1,8 @@
 library(testthat)
 
-context("Function: findBestNrCluster")
+context("Function: find_best_nr_cluster")
 
-test_that("findBestNrCluster functionallity tests (normal)", {
+test_that("find_best_nr_cluster functionallity tests (normal)", {
   dat <- matrix(data = c(1, 2, 3, 4,
                          2.1, 3.9, 6.2, 7.5,
                          0, 1, 3, 2,
@@ -14,17 +14,17 @@ test_that("findBestNrCluster functionallity tests (normal)", {
   byrow = TRUE,
   dimnames = list(c(1:6), c(1:4)))
 
-  sim <- MultIS::getSimilarityMatrix(readouts = dat,
+  sim <- MultIS::get_similarity_matrix(readouts = dat,
                                      self = 1,
                                      upper = TRUE,
                                      method = "rsquared",
                                      parallel = FALSE)
 
-  bnc <- findBestNrCluster(data = dat, sim = sim)
+  bnc <- MultIS::find_best_nr_cluster(data = dat, sim = sim)
   expect_equal(bnc, 2)
 })
 
-test_that("findBestNrCluster functionallity tests (report)", {
+test_that("find_best_nr_cluster functionallity tests (report)", {
   dat <- matrix(data = c(1, 2, 3, 4,
                          2.1, 3.9, 6.2, 7.5,
                          0, 1, 3, 2,
@@ -36,16 +36,18 @@ test_that("findBestNrCluster functionallity tests (report)", {
   byrow = TRUE,
   dimnames = list(c(1:6), c(1:4)))
 
-  sim <- MultIS::getSimilarityMatrix(readouts = dat,
+  sim <- MultIS::get_similarity_matrix(readouts = dat,
                                      self = 1,
                                      upper = TRUE,
                                      method = "rsquared",
                                      parallel = FALSE)
 
-  expect_output(findBestNrCluster(data = dat, sim = sim, report = TRUE))
+  expect_output(MultIS::find_best_nr_cluster(data = dat,
+                                             sim = sim,
+                                             report = TRUE))
 })
 
-test_that("findBestNrCluster functionallity tests (returnAll)", {
+test_that("find_best_nr_cluster functionallity tests (return_all)", {
   dat <- matrix(data = c(1, 2, 3, 4,
                          2.1, 3.9, 6.2, 7.5,
                          0, 1, 3, 2,
@@ -57,13 +59,13 @@ test_that("findBestNrCluster functionallity tests (returnAll)", {
   byrow = TRUE,
   dimnames = list(c(1:6), c(1:4)))
 
-  sim <- MultIS::getSimilarityMatrix(readouts = dat,
+  sim <- MultIS::get_similarity_matrix(readouts = dat,
                                      self = 1,
                                      upper = TRUE,
                                      method = "rsquared",
                                      parallel = FALSE)
 
-  ev <- findBestNrCluster(data = dat, sim = sim, returnAll = TRUE)
+  ev <- MultIS::find_best_nr_cluster(data = dat, sim = sim, return_all = TRUE)
 
   expect_equal(length(ev), 4)
 })
@@ -82,16 +84,19 @@ test_that("evaluateClustering functionallity tests (silhouette)", {
   byrow = TRUE,
   dimnames = list(c(1:6), c(1:4)))
 
-  sim <- MultIS::getSimilarityMatrix(readouts = dat,
+  sim <- MultIS::get_similarity_matrix(readouts = dat,
                                      self = 1,
                                      upper = TRUE,
                                      method = "rsquared",
                                      parallel = FALSE)
 
-  rec <- reconstruct(readouts = dat, targetCommunities = 3, sim = sim)
+  rec <- reconstruct(readouts = dat, target_communities = 3, sim = sim)
 
-  ev <- evaluateClustering(readouts = dat, clustering = rec, sim = sim, method = "silhouette")
-  expect_equal(ev, 0.38689220640418287012)
+  ev <- evaluate_clustering(readouts = dat,
+                            clustering = rec,
+                            sim = sim,
+                            method = "silhouette")
+  expect_equal(ev, 0.41281389796458822783)
 })
 
 test_that("evaluateClustering functionallity tests (sdindex)", {
@@ -106,15 +111,18 @@ test_that("evaluateClustering functionallity tests (sdindex)", {
   byrow = TRUE,
   dimnames = list(c(1:6), c(1:4)))
 
-  sim <- MultIS::getSimilarityMatrix(readouts = dat,
+  sim <- MultIS::get_similarity_matrix(readouts = dat,
                                      self = 1,
                                      upper = TRUE,
                                      method = "rsquared",
                                      parallel = FALSE)
 
-  rec <- reconstruct(readouts = dat, targetCommunities = 3, sim = sim)
+  rec <- reconstruct(readouts = dat, target_communities = 3, sim = sim)
 
-  ev <- evaluateClustering(readouts = dat, clustering = rec, sim = sim, method = "sdindex")
+  ev <- evaluate_clustering(readouts = dat,
+                            clustering = rec,
+                            sim = sim,
+                            method = "sdindex")
   expect_equal(ev, 0.38461041245274385503)
 })
 
@@ -130,19 +138,25 @@ test_that("evaluateClustering functionallity tests (ptbiserial)", {
   byrow = TRUE,
   dimnames = list(c(1:6), c(1:4)))
 
-  sim <- MultIS::getSimilarityMatrix(readouts = dat,
+  sim <- MultIS::get_similarity_matrix(readouts = dat,
                                      self = 1,
                                      upper = TRUE,
                                      method = "rsquared",
                                      parallel = FALSE)
 
-  rec <- reconstruct(readouts = dat, targetCommunities = 3, sim = sim)
+  rec <- reconstruct(readouts = dat, target_communities = 3, sim = sim)
 
-  ev <- evaluateClustering(readouts = dat, clustering = rec, sim = sim, method = "ptbiserial")
+  ev <- evaluate_clustering(readouts = dat,
+                            clustering = rec,
+                            sim = sim,
+                            method = "ptbiserial")
   expect_equal(ev, 0.83990304016878913895)
 })
 
 test_that("evaluateClustering functionallity tests (failure cases)", {
-  expect_error(evaluateClustering(readouts = NULL, clustering = NULL, sim = NULL, method = "silhouette"))
-  expect_error(evaluateClustering(readouts = NULL, clustering = NULL, sim = NULL, method = "foobar"))
+  expect_error(MultIS::evaluate_clustering(
+    readouts = NULL,
+    clustering = NULL,
+    sim = NULL,
+    method = "foobar"))
 })

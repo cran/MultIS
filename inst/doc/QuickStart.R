@@ -2,8 +2,6 @@
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
-  # cache = T,
-  # autodep = T
 )
 
 set.seed(42)
@@ -12,21 +10,23 @@ require(MultIS)
 
 ## ----eval=FALSE, include=FALSE------------------------------------------------
 #  # Example was generated using the following code
-#  simData <- simulate(roCompartments = 1,
+#  simData <- simulate(ro_compartments = 1,
 #                      tps = seq(1, 2*365, 60),
-#                      nrClones = 7,
-#                      meanNrBarcodes = 6,
-#                      cloneAmpSigma = 0.4,
-#                      readOutNoise = 0.2,
-#                      simulate.clones.params = list(
-#                        nrClones = 7, tps = seq(0, 2 * 365, 60),
-#                        prolif = list(type = "nDistributedFixed", nDistributed.mean = 0.3,
-#                                      nDistributed.sigma = 0, withLF = TRUE, CC = 10000),
-#                        diff = list(type = "nDistributedFixed", nDistributed.mean = 0.2,
-#                                    nDistributed.sigma = 0, withLF = FALSE),
-#                        initdist = list(type = "equal", equal.equc = (0.3/0.2) * 100))
+#                      nr_clones = 7,
+#                      target_vcn = 6,
+#                      clonal_variability = 0.4,
+#                      measurement_noise = 0.2,
+#                      use_amplification = FALSE,
+#                      simulate_clones_params = list(
+#                        nr_clones = 7, tps = seq(0, 2 * 365, 60),
+#                        prolif = list(type = "nDistributedFixed", n_distributed_mean = 0.3,
+#                                      n_distributed_sigma = 0, with_lf = TRUE, cc = 10000),
+#                        diff = list(type = "nDistributedFixed", n_distributed_mean = 0.2,
+#                                    n_distributed_sigma = 0, with_lf = FALSE),
+#                        initdist = list(type = "equal", equal_equc = (0.3/0.2) * 100))
 #  )
 #  save(simData, file = 'example.RData', version = 2)
+#  write.table(simData$is_readouts, file = 'example_readouts.csv', sep = ',')
 
 ## -----------------------------------------------------------------------------
 dat <- read.table(file = "example_readouts.csv",
@@ -41,40 +41,56 @@ knitr::kable(dat[1:10,], row.names = TRUE, digits = 2)
 plot(dat)
 
 ## ----QS-Filtering, fig.width=6, fig.height=4, fig.align="center"--------------
-filteredDat <- MultIS::filter_atTP_biggestN(dat, at = "720", n = 10L)
+filteredDat <- MultIS::filter_at_tp_biggest_n(dat, at = "720", n = 10L)
 plot(filteredDat)
 
+## ----message=FALSE, warning=FALSE, echo=FALSE---------------------------------
+similarityMatrix <- MultIS::get_similarity_matrix(dat, parallel = FALSE)
+
+is1 = which.max(unlist(
+  lapply(1:(ncol(similarityMatrix) - 2),
+         function(i) {
+           similarityMatrix[i, i + 1] +           # maximize
+             (1 - similarityMatrix[i + 1, i + 2]) # minimize
+         })
+  ))
+is2 = is1 + 1
+is3 = is1 + 2
+
 ## ----QS-rSquareSim, warning=F, fig.width=12, fig.height=4, fig.align="center"----
-p1 <- MultIS::plotRsquare(dat, "19", "20") +
-  ggplot2::annotate("text", 120, 550,
-                    label = paste("R^2 ==", round(
-                      summary(stats::lm(y ~ 0 + x, data = data.frame(
-                        x = dat["19", ],
-                        y = dat["20", ])))$r.squared, 3)), parse = T)
-p2 <- MultIS::plotRsquare(dat, "20", "21") +
-  ggplot2::annotate("text", 500, 250,
-                    label = paste("R^2 ==", round(
-                      summary(stats::lm(y ~ 0 + x, data = data.frame(
-                        x = dat["20", ],
-                        y = dat["21", ])))$r.squared, 3)), parse = T)
+r2 = round(summary(stats::lm(y ~ 0 + x, data = data.frame(
+    x = dat[is1, ], y = dat[is2, ])))$r.squared, 3)
+
+p1 <- MultIS::plot_rsquare(dat, is1, is2) +
+  ggplot2::ggtitle(label = bquote(R^2 == .(r2))) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+
+
+r2 = round(summary(stats::lm(y ~ 0 + x, data = data.frame(
+    x = dat[is2, ], y = dat[is3, ])))$r.squared, 3)
+
+p2 <- MultIS::plot_rsquare(dat, is2, is3) +
+  ggplot2::ggtitle(label = bquote(R^2 == .(r2))) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+                    
 gridExtra::grid.arrange(p1, p2, ncol = 2)
 
 ## ----QS-similarityMatrix, warning=F-------------------------------------------
-similarityMatrix <- MultIS::getSimilarityMatrix(dat, parallel = FALSE)
+similarityMatrix <- MultIS::get_similarity_matrix(dat, parallel = FALSE)
 
 ## ----QS-similarityMatrixHeatmap, warning=F, fig.width=7.2, fig.height=6, fig.align="center"----
 plot(similarityMatrix)
 
 ## ----QS-clusteringC3, warning=F, fig.width=12, fig.height=6, fig.align="center"----
 clusterObjC2 <- MultIS::reconstruct(readouts = dat,
-                                    targetCommunities = 2,
+                                    target_communities = 2,
                                     method = "kmedoids",
-                                    clusterObj = T,
+                                    cluster_obj = TRUE,
                                     sim = similarityMatrix)
 clusterObjC4 <- MultIS::reconstruct(readouts = dat,
-                                    targetCommunities = 4,
+                                    target_communities = 4,
                                     method = "kmedoids",
-                                    clusterObj = T,
+                                    cluster_obj = TRUE,
                                     sim = similarityMatrix)
 p1 <- plot(clusterObjC2)
 p2 <- plot(clusterObjC4)
@@ -82,12 +98,12 @@ p2 <- plot(clusterObjC4)
 gridExtra::grid.arrange(p1, p2, ncol = 2)
 
 ## -----------------------------------------------------------------------------
-bestNrCluster <- MultIS::findBestNrCluster(
+bestNrCluster <- MultIS::find_best_nr_cluster(
   data = dat,
   sim = similarityMatrix,
-  method.reconstruction = "kmedoids",
-  method.evaluation = "silhouette",
-  returnAll = TRUE)
+  method_reconstruction = "kmedoids",
+  method_evaluation = "silhouette",
+  return_all = TRUE)
 plotDf <- data.frame(
   k = as.numeric(names(bestNrCluster)),
   score = as.numeric(bestNrCluster)
@@ -100,19 +116,19 @@ ggplot2::ggplot(plotDf, ggplot2::aes(x = k, y = score, group = 1)) +
   ggplot2::theme(legend.position = "none")
 
 ## ----QS-Silhouette, warning=F, fig.width=7.2, fig.height=6, fig.align="center"----
-bestNrCluster <- MultIS::findBestNrCluster(
+bestNrCluster <- MultIS::find_best_nr_cluster(
   data = dat,
   sim = similarityMatrix,
-  method.reconstruction = "kmedoids",
-  method.evaluation = "silhouette",
-  returnAll = FALSE)
+  method_reconstruction = "kmedoids",
+  method_evaluation = "silhouette",
+  return_all = FALSE)
 
 ## -----------------------------------------------------------------------------
 clusterObjBest <- MultIS::reconstruct(
   readouts = dat,
-  targetCommunities = bestNrCluster,
+  target_communities = bestNrCluster,
   method = "kmedoids",
-  clusterObj = TRUE,
+  cluster_obj = TRUE,
   sim = similarityMatrix)
 plot(clusterObjBest)
 
@@ -126,24 +142,26 @@ str(simData, max.level = 1)
 knitr::kable(simData$barcodeReadouts[1:10,], digits = 2, row.names = TRUE)
 
 ## ----QS-Bushman-Clone-Readouts, fig.width=12, fig.height=8, fig.align="center"----
-p1 <- plot(simData$cloneCounts) + ggplot2::ggtitle("Basic clonal simulation")
-p2 <- plot(simData$cloneReadouts) + ggplot2:: ggtitle("Added clonal differences")
-p3 <- plot(simData$barcodeCounts) + ggplot2::ggtitle("Superimposition of integration sites")
-p4 <- plot(simData$barcodeReadouts) + ggplot2::ggtitle("Added measurement noise")
+p1 <- plot(simData$clone_counts) + ggplot2::ggtitle("Basic clonal simulation")
+p2 <- plot(simData$clone_readouts) + ggplot2:: ggtitle("Added clonal differences")
+p3 <- plot(simData$is_counts) + ggplot2::ggtitle("Superimposition of integration sites")
+p4 <- plot(simData$is_readouts) + ggplot2::ggtitle("Added measurement noise")
 gridExtra::grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
 
 ## ----QS-Mappings, results="asis", echo=F--------------------------------------
 mapping <- data.frame(Clone = unique(simData$mapping[,"Clone"]))
-mapping$Barcodes <- sapply(mapping$Clone, function(e) {
-                      paste(summary(simData$mapping[simData$mapping[, "Clone"] == e, "Barcode"])[c("Min.", "Max.")], collapse = " - ")
+mapping$IS <- sapply(mapping$Clone, function(e) {
+                      paste(summary(simData$mapping[simData$mapping[, "Clone"] == e, "IS"])[c("Min.", "Max.")], collapse = " - ")
                     })
 knitr::kable(mapping)
 
 ## ----QS-ARI, warning=F, fig.width=6, fig.height=4, fig.align="center"---------
+similarityMatrix <- MultIS::get_similarity_matrix(simData$is_readouts,
+                                                  parallel = FALSE)
 aris <- sapply(3:12, function(k) {
-  clusterObj <- MultIS::reconstruct(simData$barcodeReadouts,
-                                    targetCommunities = k,
-                                    clusterObj = T,
+  clusterObj <- MultIS::reconstruct(simData$is_readouts,
+                                    target_communities = k,
+                                    cluster_obj = TRUE,
                                     sim = similarityMatrix)
   mclust::adjustedRandIndex(clusterObj$mapping[,"Clone"], 
                             simData$mapping[,"Clone"])  

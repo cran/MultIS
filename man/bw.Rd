@@ -4,17 +4,21 @@
 \alias{bw}
 \title{Calculate the bw index}
 \usage{
-bw(distance, clusters, bwBalance = 1, indCluster = FALSE)
+bw(distance, clusters, bw_balance = 1, ind_cluster = FALSE)
 }
 \arguments{
 \item{distance}{Distance or Dis-Similarity Matrix}
 
 \item{clusters}{The clustering to evaluate.}
 
-\item{bwBalance}{The balance [0, 1] between inner cluster similarity (Compactness) and the similarity between clusters (Separation).
-A balance value < 1 increases the importance of Compactness, whereas a value > 1 increases the importance of Separation.}
+\item{bw_balance}{The balance [0, 1] between inner cluster similarity
+(Compactness) and the similarity between clusters
+(Separation). A balance value < 1 increases the importance
+of Compactness, whereas a value > 1 increases the
+importance of Separation.}
 
-\item{indCluster}{If true, the bw value for all individual clusters is returned}
+\item{ind_cluster}{If true, the bw value for all individual clusters is
+returned.}
 }
 \value{
 A score that describes how well the clustering fits the data.

@@ -6,25 +6,29 @@
 \usage{
 reconstruct(
   readouts,
-  targetCommunities,
+  target_communities,
   method = "kmedoids",
-  sim = MultIS::getSimilarityMatrix(readouts = readouts, upper = TRUE),
-  clusterObj = FALSE
+  sim = MultIS::get_similarity_matrix(readouts = readouts, upper = TRUE),
+  cluster_obj = FALSE
 )
 }
 \arguments{
 \item{readouts}{The time course for which to find clusters.}
 
-\item{targetCommunities}{The number of clusters to cluster for.}
+\item{target_communities}{The number of clusters to cluster for.}
 
-\item{method}{Either "kmedoids", "kmeans" or any string permitted as a method for stats::hclust.}
+\item{method}{Either "kmedoids", "kmeans" or any string permitted as a
+method for stats::hclust.}
 
 \item{sim}{A similarity matrix used with all methods except "kmeans".}
 
-\item{clusterObj}{If TRUE, a clusterObject with the readouts, similarity and clustering is returned.}
+\item{cluster_obj}{If TRUE, a clusterObject with the readouts, similarity
+and clustering is returned.}
 }
 \value{
-A matrix with two columns: "Clone" and "Barcode" or if clusterObj = TRUE a cluster object, which can be used to plot the clustering.
+A matrix with two columns: "Clone" and "IS" or if
+        cluster_obj = TRUE a cluster object, which can be used to plot the
+        clustering.
 }
 \description{
 Apply a clustering algorithm to a given time course.

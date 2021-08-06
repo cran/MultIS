@@ -2,36 +2,42 @@
 #'
 #' @param distance Distance or Dis-Similarity Matrix
 #' @param clusters The clustering to evaluate.
-#' @param bwBalance The balance [0, 1] between inner cluster similarity (Compactness) and the similarity between clusters (Separation).
-#'                A balance value < 1 increases the importance of Compactness, whereas a value > 1 increases the importance of Separation.
-#' @param indCluster If true, the bw value for all individual clusters is returned
+#' @param bw_balance The balance [0, 1] between inner cluster similarity
+#'                   (Compactness) and the similarity between clusters
+#'                   (Separation). A balance value < 1 increases the importance
+#'                   of Compactness, whereas a value > 1 increases the
+#'                   importance of Separation.
+#' @param ind_cluster If true, the bw value for all individual clusters is
+#'                    returned.
 #' @return A score that describes how well the clustering fits the data.
-bw <- function(distance, clusters, bwBalance = 1.0, indCluster = FALSE) {
+bw <- function(distance, clusters, bw_balance = 1.0, ind_cluster = FALSE) {
+  cluster_ids <- unique(clusters)
 
-  clusterIDs <- unique(clusters)
+  s <- sapply(seq_len(nrow(distance)), function(i) {
+    ic <- clusters == clusters[i]
+    ic[i] <- FALSE
+    ic <- which(ic) # innerCluster Elements
 
-  s <- sapply(1:nrow(distance), function(i) {
+    oc <- seq_len(nrow(distance))
+    oc <- oc[!(oc %in% c(i, ic))]
 
-    iC <- clusters == clusters[i]
-    iC[i] <- FALSE
-    iC <- which(iC) # innerCluster Elements
+    if (length(ic) == 0) {
+      return(0)
+    }
 
-    oC <- 1:nrow(distance)
-    oC <- oC[!(oC %in% c(i, iC))]
+    a <- mean(distance[i, ic])
 
-    if(length(iC) == 0) return(0)
-
-    a <- mean(distance[i, iC])
-
-    b <- min(sapply(clusterIDs[!(clusterIDs %in% clusters[i])], function(e) {
+    b <- min(sapply(cluster_ids[!(cluster_ids %in% clusters[i])], function(e) {
       mean(distance[i, clusters == e])
     }))
 
-    return((b - bwBalance * a) / max(bwBalance * a, b))
+    return((b - bw_balance * a) / max(bw_balance * a, b))
   })
 
-  ifelse(indCluster,
-         return(sapply(clusterIDs, function(e) {mean(s[clusters == e])})),
-         return(mean(s)))
-
+  ifelse(ind_cluster,
+    return(sapply(cluster_ids, function(e) {
+      mean(s[clusters == e])
+    })),
+    return(mean(s))
+  )
 }
